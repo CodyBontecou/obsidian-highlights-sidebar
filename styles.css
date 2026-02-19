@@ -1,0 +1,109 @@
+/* ─── Highlights & Comments Sidebar ─────────────────────────────────────── */
+
+.highlights-sidebar {
+  padding: 8px 0;
+  font-size: 13px;
+  user-select: none;
+}
+
+.highlights-sidebar-empty {
+  color: var(--text-muted);
+  padding: 12px 16px;
+  font-style: italic;
+}
+
+/* ── Section ────────────────────────────────────────────────────────────── */
+
+.highlights-sidebar-section {
+  margin-bottom: 4px;
+}
+
+.highlights-sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text-normal);
+  border-radius: 4px;
+}
+
+.highlights-sidebar-header:hover {
+  background-color: var(--background-modifier-hover);
+}
+
+.highlights-sidebar-chevron {
+  display: flex;
+  align-items: center;
+  color: var(--text-faint);
+  transition: transform 150ms ease;
+}
+
+.highlights-sidebar-chevron svg {
+  width: 14px;
+  height: 14px;
+}
+
+.highlights-sidebar-header-icon {
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+}
+
+.highlights-sidebar-header-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.highlights-sidebar-header-text {
+  flex: 1;
+}
+
+/* ── Item rows ──────────────────────────────────────────────────────────── */
+
+.highlights-sidebar-list {
+  padding: 0 4px;
+}
+
+.highlights-sidebar-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 12px 4px 36px;
+  cursor: pointer;
+  border-radius: 4px;
+  line-height: 1.5;
+}
+
+.highlights-sidebar-item:hover {
+  background-color: var(--background-modifier-hover);
+}
+
+.highlights-sidebar-item-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-normal);
+}
+
+.highlights-sidebar-item-line {
+  font-size: 11px;
+  color: var(--text-faint);
+  flex-shrink: 0;
+}
+
+/* Type-specific accent bars */
+
+.highlights-sidebar-item--highlight {
+  border-left: 3px solid var(--text-highlight-bg, #fff3a3);
+}
+
+.highlights-sidebar-item--comment {
+  border-left: 3px solid var(--interactive-accent, #7b6cd9);
+}
+
+.highlights-sidebar-item--footnote {
+  border-left: 3px solid var(--text-muted, #999);
+}

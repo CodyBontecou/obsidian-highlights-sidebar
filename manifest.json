@@ -1,0 +1,10 @@
+{
+  "id": "highlights-sidebar",
+  "name": "Highlights & Comments Sidebar",
+  "version": "1.0.0",
+  "minAppVersion": "0.15.0",
+  "description": "Displays highlights (==…==), comments (%%…%%), footnotes ([^…]), HTML <mark> tags, and HTML comments from the active note in a collapsible sidebar pane.",
+  "author": "Cody Bontecou",
+  "authorUrl": "https://github.com/CodyBontecou",
+  "isDesktopOnly": false
+}
