@@ -22,6 +22,12 @@ An [Obsidian](https://obsidian.md) plugin that extracts **highlights**, **commen
 
 ## Installation
 
+### From Community Plugins
+
+1. Open **Settings → Community Plugins → Browse**
+2. Search for "Highlights & Comments Sidebar"
+3. Click **Install**, then **Enable**
+
 ### From source (manual)
 
 ```bash
