@@ -1,6 +1,6 @@
 {
   "name": "obsidian-highlights-sidebar",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "An Obsidian plugin that displays highlights, comments, and footnotes from the active note in a sidebar pane.",
   "main": "main.js",
   "scripts": {
