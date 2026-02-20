@@ -66,6 +66,11 @@ npm run build
 
 Produces `main.js` (bundled) in the project root alongside `manifest.json` and `styles.css` — the three files Obsidian needs to load the plugin.
 
+
+## Inspiration
+
+This plugin was built in response to a request by u/bamajon1974 in [this Reddit thread](https://www.reddit.com/r/ObsidianMD/comments/1r8vw0w/anyone_have_a_plugin_request/) — a sidebar that extracts highlights, comments, and footnotes.
+
 ## License
 
 MIT
