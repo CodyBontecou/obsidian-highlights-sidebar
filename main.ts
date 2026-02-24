@@ -7,6 +7,7 @@ import {
 	Plugin,
 	PluginSettingTab,
 	Setting,
+	TFile,
 	WorkspaceLeaf,
 	debounce,
 	setIcon,
@@ -90,8 +91,8 @@ function parseContent(content: string): ParsedItem[] {
 			});
 		}
 
-		// <mark>highlight</mark> (HTML)
-		for (const m of line.matchAll(/<mark>(.*?)<\/mark>/gi)) {
+		// <mark>highlight</mark> (HTML, with optional style/class attributes)
+		for (const m of line.matchAll(/<mark[^>]*>(.*?)<\/mark>/gi)) {
 			items.push({
 				type: "highlight",
 				text: m[1],
@@ -166,9 +167,16 @@ function sortItems(items: ParsedItem[], order: SortOrder): ParsedItem[] {
 
 // ─── Sidebar View ────────────────────────────────────────────────────────────
 
+interface CachedNote {
+	path: string;
+	content: string;
+	displayName: string;
+}
+
 class HighlightsSidebarView extends ItemView {
 	private plugin: HighlightsSidebarPlugin;
 	private searchQuery: string = "";
+	private cachedNote: CachedNote | null = null;
 
 	constructor(leaf: WorkspaceLeaf, plugin: HighlightsSidebarPlugin) {
 		super(leaf);
@@ -207,7 +215,24 @@ class HighlightsSidebarView extends ItemView {
 
 		const activeView =
 			this.app.workspace.getActiveViewOfType(MarkdownView);
-		if (!activeView) {
+		
+		let content: string;
+		let notePath: string;
+		let displayName: string;
+
+		if (activeView && activeView.file) {
+			// Update cache with current active note
+			content = activeView.editor.getValue();
+			notePath = activeView.file.path;
+			displayName = activeView.file.basename;
+			this.cachedNote = { path: notePath, content, displayName };
+		} else if (this.cachedNote) {
+			// Use cached note when no markdown view is active
+			content = this.cachedNote.content;
+			notePath = this.cachedNote.path;
+			displayName = this.cachedNote.displayName;
+		} else {
+			// No active view and no cache
 			container.createEl("p", {
 				text: "Open a note to see its highlights, comments, and footnotes.",
 				cls: "highlights-sidebar-empty",
@@ -215,8 +240,38 @@ class HighlightsSidebarView extends ItemView {
 			return;
 		}
 
-		const content = activeView.editor.getValue();
 		const allItems = parseContent(content);
+
+		// ── Note title header ──────────────────────────────────────────────
+		const noteHeader = container.createDiv({
+			cls: "highlights-sidebar-note-header",
+		});
+		noteHeader.createSpan({
+			text: displayName,
+			cls: "highlights-sidebar-note-title",
+		});
+		// Show indicator if viewing cached (non-active) note
+		if (!activeView || !activeView.file || activeView.file.path !== notePath) {
+			noteHeader.createSpan({
+				text: "(not focused)",
+				cls: "highlights-sidebar-note-status",
+			});
+		}
+
+		// Export button
+		if (allItems.length > 0) {
+			const exportBtn = noteHeader.createSpan({
+				cls: "highlights-sidebar-export-btn",
+				attr: {
+					"aria-label": "Export annotations to markdown",
+					title: "Export annotations to markdown",
+				},
+			});
+			setIcon(exportBtn, "file-output");
+			exportBtn.addEventListener("click", () => {
+				this.exportAnnotations(displayName, notePath, allItems);
+			});
+		}
 
 		// ── Search bar ─────────────────────────────────────────────────────
 		const searchContainer = container.createDiv({
@@ -601,7 +656,16 @@ class HighlightsSidebarView extends ItemView {
 
 	// ── Scroll-to-source ───────────────────────────────────────────────────
 
-	private scrollToItem(item: ParsedItem): void {
+	private async scrollToItem(item: ParsedItem): Promise<void> {
+		// First, ensure the correct file is open
+		if (this.cachedNote) {
+			const file = this.app.vault.getAbstractFileByPath(this.cachedNote.path);
+			if (file instanceof TFile) {
+				// Open the file in the most recent leaf (don't create new tab)
+				await this.app.workspace.getLeaf(false).openFile(file);
+			}
+		}
+
 		const activeView =
 			this.app.workspace.getActiveViewOfType(MarkdownView);
 		if (!activeView) return;
@@ -626,6 +690,97 @@ class HighlightsSidebarView extends ItemView {
 
 		// Make sure the editor pane is focused
 		activeView.editor.focus();
+	}
+
+	// ── Export annotations ─────────────────────────────────────────────────
+
+	private async exportAnnotations(
+		displayName: string,
+		notePath: string,
+		items: ParsedItem[]
+	): Promise<void> {
+		const { vault } = this.app;
+
+		// Group items by type
+		const groups: Record<ItemType, ParsedItem[]> = {
+			highlight: [],
+			comment: [],
+			footnote: [],
+		};
+		for (const item of items) {
+			groups[item.type].push(item);
+		}
+
+		// Generate markdown content
+		const lines: string[] = [];
+		lines.push(`# Annotations from [[${displayName}]]`);
+		lines.push("");
+		lines.push(`> Exported on ${new Date().toLocaleString()}`);
+		lines.push("");
+
+		const sourceLink = `[[${displayName}]]`;
+
+		// Highlights
+		if (groups.highlight.length > 0) {
+			lines.push("## Highlights");
+			lines.push("");
+			for (const item of sortItems(groups.highlight, "line-asc")) {
+				lines.push(`- ==${item.text}== *(line ${item.line + 1})*`);
+			}
+			lines.push("");
+		}
+
+		// Comments
+		if (groups.comment.length > 0) {
+			lines.push("## Comments");
+			lines.push("");
+			for (const item of sortItems(groups.comment, "line-asc")) {
+				lines.push(`- ${item.text} *(line ${item.line + 1})*`);
+			}
+			lines.push("");
+		}
+
+		// Footnotes
+		if (groups.footnote.length > 0) {
+			lines.push("## Footnotes");
+			lines.push("");
+			for (const item of sortItems(groups.footnote, "line-asc")) {
+				lines.push(`- ${item.text} *(line ${item.line + 1})*`);
+			}
+			lines.push("");
+		}
+
+		lines.push("---");
+		lines.push(`*Source: ${sourceLink}*`);
+
+		const content = lines.join("\n");
+
+		// Determine export file path (same folder as source, with " - Annotations" suffix)
+		const sourceFile = vault.getAbstractFileByPath(notePath);
+		let exportPath: string;
+		if (sourceFile instanceof TFile) {
+			const folder = sourceFile.parent?.path || "";
+			const baseName = `${displayName} - Annotations`;
+			exportPath = folder ? `${folder}/${baseName}.md` : `${baseName}.md`;
+		} else {
+			exportPath = `${displayName} - Annotations.md`;
+		}
+
+		// Check if file exists and handle conflict
+		const existingFile = vault.getAbstractFileByPath(exportPath);
+		if (existingFile instanceof TFile) {
+			// Overwrite existing file
+			await vault.modify(existingFile, content);
+		} else {
+			// Create new file
+			await vault.create(exportPath, content);
+		}
+
+		// Open the exported file
+		const exportedFile = vault.getAbstractFileByPath(exportPath);
+		if (exportedFile instanceof TFile) {
+			await this.app.workspace.getLeaf("tab").openFile(exportedFile);
+		}
 	}
 }
 

@@ -11,6 +11,52 @@
 	font-style: italic;
 }
 
+/* ── Note header ────────────────────────────────────────────────────────── */
+
+.highlights-sidebar-note-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 12px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	background-color: var(--background-secondary);
+}
+
+.highlights-sidebar-note-title {
+	font-weight: 600;
+	color: var(--text-normal);
+	flex: 1;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.highlights-sidebar-note-status {
+	font-size: 0.85em;
+	color: var(--text-faint);
+	font-style: italic;
+}
+
+.highlights-sidebar-export-btn {
+	display: flex;
+	align-items: center;
+	padding: 4px;
+	border-radius: 4px;
+	color: var(--text-faint);
+	cursor: pointer;
+	transition: all 120ms ease;
+}
+
+.highlights-sidebar-export-btn:hover {
+	color: var(--text-normal);
+	background-color: var(--background-modifier-hover);
+}
+
+.highlights-sidebar-export-btn svg {
+	width: 16px;
+	height: 16px;
+}
+
 /* ── Search bar ─────────────────────────────────────────────────────────── */
 
 .highlights-sidebar-search {
